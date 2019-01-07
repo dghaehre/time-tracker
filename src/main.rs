@@ -53,6 +53,7 @@ fn main() {
 }
 
 
+// To be moved
 fn start(db: Db) {
     let project = db.get_project();
     match db.get_name() {

@@ -1,6 +1,12 @@
 /// Get projects saved in ~/.time-tracker-projects
 ///
 ///
+use std::fs::File;
+use std::io::prelude::*;
+
+pub enum ProjectError {
+    NoFile
+}
 
 pub struct Db {
     pub name: Option<String>,
@@ -18,6 +24,19 @@ pub struct Project {
 #[derive(Clone)]
 pub struct Job {}
 
+/// Get contents from ~/.time-tracker-projects
+fn get_file() -> Result<String, ProjectError> {
+    match File::open("Foo.txt") {
+        Ok(mut file) => {
+            let mut contents = String::new();
+            file.read_to_string(&mut contents).unwrap();
+            println!("File content {}", contents);
+            Ok(contents)       
+        },
+        Err(_) => Err(ProjectError::NoFile)
+    }
+}
+
 impl Db {
     pub fn new (name: Option<&str>) -> Self {
         let n: Option<String> = match name {
@@ -28,15 +47,18 @@ impl Db {
     }
     /// Fetch respective project
     /// from ~/.time-tracker-projects
-    pub fn get_project(&self) -> Option<Project> {
-        self.current.clone()
+    pub fn get_project(&self) -> Result<Option<Project>, ProjectError> {
+        let _file = get_file()?;
+        Ok(self.current.clone())
     }
     // To be removed!!
     pub fn get_name(&self) -> Option<String> {
         self.name.clone()
     }
-    pub fn get_projects(&self) -> Option<Vec<Project>> {
-        self.all.clone()
+    /// Fetch all projects
+    /// from ~/.time-tracker-projects
+    pub fn get_projects(&self) -> Result<Option<Vec<Project>>, ProjectError> {
+        Err(ProjectError::NoFile)
     }
     pub fn _new_project(&self, _project: Project) -> Result<String, ()> {
         Err(())
