@@ -12,11 +12,19 @@
 
 extern crate clap;
 
+#[macro_use]
+extern crate serde_derive;
+
 use clap::{Arg, App};
 
 mod projects;
 mod display;
+
 use projects::Db;
+use projects::ProjectStatus;
+use display::display_error;
+use display::display_status;
+
 
 fn main() {
 
@@ -39,19 +47,25 @@ fn main() {
 
     let project_name = matches.value_of("PROJECT");
 
-    let db = Db::new(project_name);
+    let db = Db::init(project_name);
 
     match matches.value_of("COMMAND").unwrap() {
         "list"      => display::list(db),
         "start"     => start(db),
         "stop"      => println!("Stop"),
-        "new"       => println!("new"),
+        "new"       => new(db),
         "delete"    => println!("delete"),
-        "display"   => println!("display"),
+        "display"   => display::stat(db),
         _           => println!("Command not valid.. ")
     };
 }
 
+fn new(db: Db) {
+    match db.new() {
+        Ok(_) => display_status(ProjectStatus::ProjectCreated),
+        Err(e) => display_error(e)
+    }
+}
 
 // To be moved
 fn start(db: Db) {
