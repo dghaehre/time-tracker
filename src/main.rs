@@ -47,6 +47,8 @@ fn main() {
 
     let project_name = matches.value_of("PROJECT");
 
+    /// Init time-tracker
+    /// If no file exist, create file in home directory
     let db = Db::init(project_name);
 
     match matches.value_of("COMMAND").unwrap() {

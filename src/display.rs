@@ -34,10 +34,13 @@ pub fn display_status(s: ProjectStatus) {
     }
 }
 
+fn show_amount(a: usize) -> String { format!("({})\n", a.to_string()) }
 
 pub fn list(db: Db) {
+    let index = Green.bold().paint("Projects: ");
     match db.get_projects() {
-        Ok(Some(p)) => println!("Found projects"),
+        Ok(Some(p)) => 
+            println!("{}{}{}", index, show_amount(p.len()), "listing projects here"),
         Ok(None) => println!("Did not find any projects\n\nTo create a new project:\n'time-tracker new <name>'"),
         Err(e) => display_error(e)
     }

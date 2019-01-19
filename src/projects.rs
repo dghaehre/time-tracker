@@ -28,10 +28,10 @@ pub enum ProjectStatus {
 }
 
 pub struct Db {
-    pub name: Option<String>,
-    pub current: Option<Project>,
-    pub file: Option<String>,
-    pub all: Option<Vec<Project>>
+    pub name:       Option<String>,
+    pub current:    Option<Project>,
+    pub file:       Option<String>,
+    pub all:        Option<Vec<Project>>
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -66,10 +66,7 @@ fn get_file() -> Result<String, ProjectError> {
             file.read_to_string(&mut contents).unwrap();
             Ok(contents)       
         },
-        Err(e) => {
-            println!("{:?}", e);
-            Err(ProjectError::NoFile)
-        }
+        Err(e) => Err(ProjectError::NoFile)
     }
 }
 
@@ -85,10 +82,15 @@ fn create_dir() -> Result<(), ProjectError> {
 }
 
 /// create ~/time-tracker/projects.json? 
-fn create_file() -> Result<(), ProjectError> {
-    create_dir()?;
+fn create_file() -> Result<Option<String>, ProjectError> {
+    create_dir()?; // TODO dir might already exist..
     match File::create(get_full_path()) {
-        Ok(_) => Ok(()),
+        Ok(mut file) => {
+           match file.write_all(b"[]") {
+               Ok(_) => Ok(Some("[]".to_owned())),
+               Err(_) => Err(ProjectError::CreateFile)
+           }
+        },
         Err(e) => Err(ProjectError::CreateFile)
     }
 }
@@ -98,7 +100,10 @@ fn parse_file(file: Option<String>) -> Option<Vec<Project>> {
     let s: String = file.unwrap_or("".to_owned());
     match serde_json::from_str(&s[..]) {
         Ok(p) => Some(p),
-        Err(_) => None
+        Err(e) => {
+            println!("{:?}", e);
+            None
+        }
     }
 }
 
@@ -116,8 +121,7 @@ impl Db {
                     .unwrap_or_else(|e| {
                         display_error(e);
                         process::exit(1);
-                    });
-                None
+                    })
             }
         };
         let n: Option<String> = match name {
