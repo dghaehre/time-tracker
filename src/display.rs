@@ -20,7 +20,9 @@ pub fn display_error(e: ProjectError) {
         ProjectError::CreateProject
             => println!("{}{}", index, Red.paint("Could not create new project")),
         ProjectError::ParseFile
-            => println!("{}{}", index, Red.paint("Could not parse file"))
+            => println!("{}{}", index, Red.paint("Could not parse file")),
+        ProjectError::NoName
+            => println!("{}{}", index, Red.paint("No name given"))
     }
 }
 
@@ -38,12 +40,8 @@ fn show_amount(a: usize) -> String { format!("({})\n", a.to_string()) }
 
 pub fn list(db: Db) {
     let index = Green.bold().paint("Projects: ");
-    match db.get_projects() {
-        Ok(Some(p)) => 
-            println!("{}{}{}", index, show_amount(p.len()), "listing projects here"),
-        Ok(None) => println!("Did not find any projects\n\nTo create a new project:\n'time-tracker new <name>'"),
-        Err(e) => display_error(e)
-    }
+    let p = db.get_projects();
+    println!("{}{}{}", index, show_amount(p.len()), "listing projects here");
 }
 
 
@@ -56,10 +54,7 @@ pub fn stat(db: Db) {
             Err(e)  => display_error(e)
         }
     } else {
-        match db.get_projects() {
-            Ok(Some(p)) => println!("Found projects"),
-            Ok(None) => println!("Did not find any projects\n\nTo create a new project:\n'time-tracker new <name>'"),
-            Err(e) => display_error(e)
-        }
+        let p = db.get_projects();
+        println!("Found projects");
     }
 }
