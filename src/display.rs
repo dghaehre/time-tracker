@@ -22,7 +22,9 @@ pub fn display_error(e: ProjectError) {
         ProjectError::ParseFile
             => println!("{}{}", index, Red.paint("Could not parse file")),
         ProjectError::NoName
-            => println!("{}{}", index, Red.paint("No name given"))
+            => println!("{}{}", index, Red.paint("Expected second argument, but no second argument given")),
+        ProjectError::DeleteProject
+            => println!("{}{}", index, Red.paint("Could not delete project"))
     }
 }
 
@@ -32,7 +34,9 @@ pub fn display_status(s: ProjectStatus) {
         ProjectStatus::CreatingFile
             => println!("{}{}", index, Green.paint("Creating file in home diretory")),
         ProjectStatus::ProjectCreated
-            => println!("{}{}", index, Green.paint("Project is created"))
+            => println!("{}{}", index, Green.paint("Project is created")),
+        ProjectStatus::ProjectDeleted
+            => println!("{}{}", index, Green.paint("Project deleted"))
     }
 }
 
@@ -40,13 +44,21 @@ fn show_amount(a: usize) -> String { format!("({})\n", a.to_string()) }
 
 pub fn list(db: Db) {
     let index = Green.bold().paint("Projects: ");
-    let p = db.get_projects();
-    println!("{}{}{}", index, show_amount(p.len()), "listing projects here");
+    let projects = db.get_projects();
+    let list = projects.iter().fold("".to_owned(), |s, p| {
+        s + 
+        &p.title.clone() + "\n" +
+        "-----------------------\n" +
+        "Times tracked: " + &show_amount(p.jobs.len()) +
+        "Total hours: 0\n"
+    });
+    println!("{}{}\n{}", index, show_amount(projects.len()), list);
 }
 
 
 /// Display info about <project> or if <project> is
-/// not given, display summary of all projects.
+/// not given, display summary of all projects as
+/// list
 pub fn stat(db: Db) {
     if db.get_name().is_some() {
         match db.get_project() {
@@ -54,7 +66,6 @@ pub fn stat(db: Db) {
             Err(e)  => display_error(e)
         }
     } else {
-        let p = db.get_projects();
-        println!("Found projects");
+        list(db);
     }
 }

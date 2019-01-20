@@ -19,13 +19,15 @@ pub enum ProjectError {
     CreateFile,
     CreateDir,
     CreateProject,
+    DeleteProject,
     ParseFile,
     NoName
 }
 
 pub enum ProjectStatus {
     CreatingFile,
-    ProjectCreated
+    ProjectCreated,
+    ProjectDeleted
 }
 
 pub struct Db {
@@ -42,7 +44,20 @@ pub struct Project {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct Job {}
+pub struct Job {
+    pub name:   String,
+    pub times: Vec<Time>
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Time {
+    start:  String,
+    end:    String
+}
+
+
+
+
 impl Db {
 
     /// Check for projects file
@@ -89,6 +104,13 @@ impl Db {
                     Err(e) => Err(e)
                 }
             }
+            None => Err(ProjectError::NoName)
+        }
+    }
+
+    pub fn delete(self) -> Result<(), ProjectError> {
+        match self.name {
+            Some(name) => Err(ProjectError::DeleteProject),
             None => Err(ProjectError::NoName)
         }
     }

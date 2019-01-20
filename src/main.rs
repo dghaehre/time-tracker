@@ -56,7 +56,7 @@ fn main() {
         "start"     => start(db),
         "stop"      => println!("Stop"),
         "new"       => new(db),
-        "delete"    => println!("delete"),
+        "delete"    => delete(db),
         "display"   => display::stat(db),
         _           => println!("Command not valid.. ")
     };
@@ -65,6 +65,13 @@ fn main() {
 fn new(db: Db) {
     match db.new() {
         Ok(_) => display_status(ProjectStatus::ProjectCreated),
+        Err(e) => display_error(e)
+    }
+}
+
+fn delete(db: Db) {
+    match db.delete() {
+        Ok(_) => display_status(ProjectStatus::ProjectDeleted),
         Err(e) => display_error(e)
     }
 }
