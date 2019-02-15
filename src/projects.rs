@@ -24,6 +24,13 @@ pub enum ProjectError {
     NoName
 }
 
+#[derive(Debug)]
+pub enum FileOperation {
+    Add,
+    Update,
+    Delete
+}
+
 pub enum ProjectStatus {
     CreatingFile,
     ProjectCreated,
@@ -36,30 +43,26 @@ pub struct Db {
     pub projects:   Vec<Project>
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Project {
     pub title:          String,
     pub description:    String,
     pub jobs:           Vec<Job>
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Job {
     pub name:   String,
     pub times: Vec<Time>
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Time {
     start:  String,
     end:    String
 }
 
-
-
-
 impl Db {
-
     /// Check for projects file
     /// if no file, create one
     /// else parse file
@@ -99,7 +102,7 @@ impl Db {
                     description: "".to_owned(),
                     jobs: vec![]
                 };
-                match update_file(self.projects, project) {
+                match update_file(self.projects, project, FileOperation::Add) {
                     Ok(_) => Ok(()),
                     Err(e) => Err(e)
                 }
@@ -110,7 +113,18 @@ impl Db {
 
     pub fn delete(self) -> Result<(), ProjectError> {
         match self.name {
-            Some(name) => Err(ProjectError::DeleteProject),
+            Some(name) => {
+                // Creating "fake" project to match against when deleting
+                let project = Project {
+                    title: name,
+                    description: "".to_owned(),
+                    jobs: vec![]
+                };
+                match update_file(self.projects, project, FileOperation::Delete) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(e)
+                }
+            },
             None => Err(ProjectError::NoName)
         }
     }
@@ -200,11 +214,7 @@ fn create_file() -> Result<Option<String>, ProjectError> {
         Err(e) => Err(ProjectError::CreateFile)
     }
 }
-    
-fn write_to_file(v: Vec<Project>) -> Result<(), ProjectError> {
-    unimplemented!()
-}
-
+   
 fn parse_file(file: Option<String>) -> Option<Vec<Project>> {
     let s: String = file.unwrap_or("".to_owned());
     match serde_json::from_str(&s[..]) {
@@ -242,31 +252,34 @@ fn update_project(all: &Vec<Project>, new: &Project) -> Vec<Project> {
 /// takes current_file (string) and the updated project.
 /// If updated projects does not exist is current_file,
 /// a new project is created
-pub fn update_file(projects: Vec<Project>, project: Project)
+pub fn update_file(projects: Vec<Project>, project: Project, op: FileOperation)
     -> Result<Vec<Project>, ProjectError> {
-        let mut updated = projects.clone();
-        let exist: bool = projects.iter().fold(false, |e, p| {
-                if p.title == project.title {
-                    true
-                } else {
-                    e
-                }
-            });
-        if exist {
-            updated = updated.iter().fold(vec![], |mut u, p| {
-                if p.title == project.title {
-                    u.push(project.clone());
-                } else {
-                    u.push(p.clone());
-                }
+        let updated: Vec<Project> = match op {
+            FileOperation::Add => {
+                let mut u = projects.clone();
+                u.push(project);
                 u
-            });
-        } else {
-           updated.push(project);
-        }
+            },
+            FileOperation::Update => {
+                projects.iter().fold(vec![], |mut u, p| {
+                    if p.title == project.title {
+                        u.push(project.clone());
+                    } else {
+                        u.push(p.clone());
+                    }
+                    u
+                })
+            },
+            FileOperation::Delete => {
+                projects
+                    .into_iter()
+                    .filter(|p| p.title != project.title)
+                    .collect()
+            }
+        };
         let json = serde_json::to_string(&updated).unwrap();
         fs::write(get_full_path(), json).expect("Unable to write file");
         Ok(updated)
- }
+}
 
 

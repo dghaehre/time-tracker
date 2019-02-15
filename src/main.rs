@@ -16,7 +16,6 @@ extern crate clap;
 extern crate serde_derive;
 
 use clap::{Arg, App};
-
 mod projects;
 mod display;
 
@@ -24,6 +23,8 @@ use projects::Db;
 use projects::ProjectStatus;
 use display::display_error;
 use display::display_status;
+use std::time::{Duration, Instant};
+use std::thread;
 
 
 fn main() {
@@ -78,9 +79,17 @@ fn delete(db: Db) {
 
 // To be moved
 fn start(db: Db) {
-    let project = db.get_project();
     match db.get_name() {
-        Some(name) => println!("Start {}", name),
+        Some(name) => start_record(name),
         None       => println!("Missing project name\n\nUsage:\ntime-tracker start <project>")
+    }
+}
+
+fn start_record(name: String) {
+    let now = Instant::now();
+    loop {
+        std::process::Command::new("clear").status().unwrap();
+        display::show_counter(&name, now.elapsed().as_secs());
+        thread::sleep(Duration::from_secs(1));
     }
 }

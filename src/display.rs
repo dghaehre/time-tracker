@@ -7,6 +7,7 @@ use projects::ProjectError;
 use projects::ProjectStatus;
 use display::ansi_term::Colour::Red;
 use display::ansi_term::Colour::Green;
+use display::ansi_term::Colour::Yellow;
 
 pub fn display_error(e: ProjectError) {
     let index = Red.bold().paint("\nERROR: ");
@@ -50,7 +51,7 @@ pub fn list(db: Db) {
         &p.title.clone() + "\n" +
         "-----------------------\n" +
         "Times tracked: " + &show_amount(p.jobs.len()) +
-        "Total hours: 0\n"
+        "Total hours: 0\n\n\n"
     });
     println!("{}{}\n{}", index, show_amount(projects.len()), list);
 }
@@ -68,4 +69,8 @@ pub fn stat(db: Db) {
     } else {
         list(db);
     }
+}
+
+pub fn show_counter(name: &String, time: u64) {
+    println!("{}{}   {}\n", "Working ", Green.bold().paint(name), Yellow.paint(time.to_string()));
 }
