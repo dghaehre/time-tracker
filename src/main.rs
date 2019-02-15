@@ -11,6 +11,7 @@
 //! trime-tracker display
 
 extern crate clap;
+extern crate ctrlc;
 
 #[macro_use]
 extern crate serde_derive;
@@ -25,7 +26,8 @@ use display::display_error;
 use display::display_status;
 use std::time::{Duration, Instant};
 use std::thread;
-
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 fn main() {
 
@@ -87,9 +89,18 @@ fn start(db: Db) {
 
 fn start_record(name: String) {
     let now = Instant::now();
-    loop {
+    let finished = Arc::new(AtomicBool::new(false));
+    let n = Arc::new(name);
+    let nn = n.clone();
+    let f = finished.clone();
+    ctrlc::set_handler(move || {
         std::process::Command::new("clear").status().unwrap();
-        display::show_counter(&name, now.elapsed().as_secs());
+        f.store(true, Ordering::Relaxed);
+        display::saving(&nn, now.elapsed().as_secs());
+    });
+    while !finished.load(Ordering::Relaxed) {
+        std::process::Command::new("clear").status().unwrap();
+        display::show_counter(&n, now.elapsed().as_secs());
         thread::sleep(Duration::from_secs(1));
     }
 }

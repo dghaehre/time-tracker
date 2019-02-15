@@ -71,6 +71,10 @@ pub fn stat(db: Db) {
     }
 }
 
-pub fn show_counter(name: &String, time: u64) {
-    println!("{}{}   {}\n", "Working ", Green.bold().paint(name), Yellow.paint(time.to_string()));
+pub fn show_counter(name: &str, time: u64) {
+    println!("{}{}   {}\n\n{}", "Working ", Green.bold().paint(name), Yellow.paint(time.to_string()), "Press ctrl-C to save/quit current job");
+}
+
+pub fn saving(name: &str, time: u64) {
+    println!("Saving work for {}\n\nSeconds: {}", Green.bold().paint(name), Yellow.paint(time.to_string()));
 }
