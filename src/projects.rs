@@ -134,8 +134,24 @@ impl Db {
 
     /// Save new job to db
     /// and write to file
+    ///
+    /// Create updated project and
+    /// run update_file()
     pub fn save(&self, name: &str, time: u64) -> Result<(), ()> {
-        Err(())
+        match self.projects
+                .iter()
+                .cloned()
+                .filter(|p| p.title == name)
+                .nth(0) {
+            Some(mut project) => {
+                project.add_new_job(time);
+                match update_file(self.projects.clone(), project, FileOperation::Update) {
+                    Ok(_) => Ok(()),
+                    Err(_)  => Err(())
+                }
+            },
+            None => Err(())
+        }
     }
 
     /// Fetch respective project
@@ -179,8 +195,15 @@ impl Db {
 
 impl Project {
     /// Add job for project
-    fn _add_new_job(&self, _job: Job) {
-        unimplemented!()
+    fn add_new_job(&mut self, sec: u64) {
+        let end = "".to_owned(); // TODO
+        self.jobs.push(Job {
+            name: "test".to_string(),
+            time: Time {
+                sec,
+                end
+            }
+        });
     }
     /// Display jobs as stats
     /// for display <project>
@@ -309,5 +332,3 @@ pub fn update_file(projects: Vec<Project>, project: Project, op: FileOperation)
         fs::write(get_full_path(), json).expect("Unable to write file");
         Ok(updated)
 }
-
-
