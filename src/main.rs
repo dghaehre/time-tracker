@@ -82,21 +82,24 @@ fn delete(db: Db) {
 // To be moved
 fn start(db: Db) {
     match db.get_name() {
-        Some(name) => start_record(name),
+        Some(_) => start_record(db),
         None       => println!("Missing project name\n\nUsage:\ntime-tracker start <project>")
     }
 }
 
-fn start_record(name: String) {
+fn start_record(db: Db) {
+    let name = db.get_name().unwrap();
     let now = Instant::now();
     let finished = Arc::new(AtomicBool::new(false));
     let n = Arc::new(name);
     let nn = n.clone();
     let f = finished.clone();
+    let d = Arc::new(db);
     ctrlc::set_handler(move || {
         std::process::Command::new("clear").status().unwrap();
         f.store(true, Ordering::Relaxed);
         display::saving(&nn, now.elapsed().as_secs());
+        display::saved(d.save(&nn, now.elapsed().as_secs()));
     });
     while !finished.load(Ordering::Relaxed) {
         std::process::Command::new("clear").status().unwrap();

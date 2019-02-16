@@ -71,10 +71,38 @@ pub fn stat(db: Db) {
     }
 }
 
+fn format_time(time: u64) -> String {
+    if time > 9 {
+        time.to_string()
+    } else {
+        format!("0{}", time.to_string())
+    }
+}
+
+fn show_time(time: u64) -> String {
+    let mut r = "".to_owned();
+    let tminutes = time / 60;
+    let thours = tminutes / 60;
+    let h = format!("{}.", format_time(thours));
+    let m = format!("{}.", format_time(tminutes - thours * 60));
+    let s = format!("{}", format_time(time - tminutes * 60));
+    r.push_str(&h);
+    r.push_str(&m);
+    r.push_str(&s);
+    r
+}
+
 pub fn show_counter(name: &str, time: u64) {
-    println!("{}{}   {}\n\n{}", "Working ", Green.bold().paint(name), Yellow.paint(time.to_string()), "Press ctrl-C to save/quit current job");
+    println!("{}{}   {}\n\n{}", "Working ", Green.bold().paint(name), Yellow.paint(show_time(time)), "Press ctrl-C to save current job");
 }
 
 pub fn saving(name: &str, time: u64) {
-    println!("Saving work for {}\n\nSeconds: {}", Green.bold().paint(name), Yellow.paint(time.to_string()));
+    println!("Saving work for {}\n\nSeconds: {}", Green.bold().paint(name), Yellow.paint(show_time(time)));
+}
+
+pub fn saved(r: Result<(), ()>) {
+    match r {
+        Ok(_)   => println!("\n{}", Green.bold().paint("Job saved succesfully")),
+        Err(_)  =>  println!("\n{}", Red.bold().paint("Saving failed"))
+    }
 }

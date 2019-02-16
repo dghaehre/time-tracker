@@ -3,12 +3,14 @@
 extern crate dirs;
 extern crate serde;
 extern crate serde_json;
+extern crate chrono;
 
 use std::fs::File;
 use std::fs;
 use std::io::prelude::*;
 use std::process;
 use std::path::PathBuf;
+use projects::chrono::prelude::*;
 
 use display::display_error;
 use display::display_status;
@@ -37,6 +39,7 @@ pub enum ProjectStatus {
     ProjectDeleted
 }
 
+#[derive(Clone)]
 pub struct Db {
     pub name:       Option<String>,
     pub current:    Option<Project>,
@@ -53,12 +56,12 @@ pub struct Project {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Job {
     pub name:   String,
-    pub times: Vec<Time>
+    pub time:   Time
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Time {
-    start:  String,
+    sec:    u64,
     end:    String
 }
 
@@ -129,6 +132,12 @@ impl Db {
         }
     }
 
+    /// Save new job to db
+    /// and write to file
+    pub fn save(&self, name: &str, time: u64) -> Result<(), ()> {
+        Err(())
+    }
+
     /// Fetch respective project
     /// from ~/.time-tracker-projects
     pub fn get_project(&self) -> Result<Option<Project>, ProjectError> {
@@ -136,9 +145,28 @@ impl Db {
         Ok(self.current.clone())
     }
 
-    // To be removed!!
+    /// Get Some(name) if user has provided name
+    /// that corresponds to a project stored in 'db'
     pub fn get_name(&self) -> Option<String> {
-        self.name.clone()
+        match &self.name {
+            Some(name) => {
+                let exist = self.projects
+                    .iter()
+                    .fold(false, |x, project| {
+                        if &project.title == name {
+                            true
+                        } else {
+                            x
+                        }
+                    });
+                if exist {
+                    self.name.clone()
+                } else {
+                    None
+                }
+            },
+            None => None
+        }
     }
 
     /// Fetch all projects
