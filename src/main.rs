@@ -35,6 +35,10 @@ fn main() {
                             .index(2)
                             .help("Name of project");
 
+    let arg_job_name = Arg::with_name("JOB NAME")
+                            .index(3)
+                            .help("Name of job recorded");
+
     let command = Arg::with_name("COMMAND")
                             .index(1)
                             .required(true)
@@ -46,13 +50,16 @@ fn main() {
                         .about("A cli tool for tracking time spent on projects")
                         .arg(command)
                         .arg(arg_project)
+                        .arg(arg_job_name)
                         .get_matches();
 
     let project_name = matches.value_of("PROJECT");
 
+    let job_name = matches.value_of("JOB NAME");
+
     // Init time-tracker
     // If no file exist, create file in home directory
-    let db = Db::init(project_name);
+    let db = Db::init(project_name, job_name);
 
     match matches.value_of("COMMAND").unwrap() {
         "list"      => display::list(db),
@@ -78,11 +85,10 @@ fn delete(db: Db) {
     }
 }
 
-// To be moved
 fn start(db: Db) {
     match db.get_name() {
         Some(_) => start_record(db),
-        None       => println!("Missing project name\n\nUsage:\ntime-tracker start <project>")
+        None       => println!("Missing project name\n\nUsage:\ntime-tracker start <project> <optional job-name>")
     }
 }
 
@@ -94,6 +100,7 @@ fn start_record(db: Db) {
     let nn = n.clone();
     let f = finished.clone();
     let d = Arc::new(db);
+    let jobname = d.jobname.clone();
     if let Err(_) = ctrlc::set_handler(move || {
             std::process::Command::new("clear").status().unwrap();
             f.store(true, Ordering::Relaxed);
@@ -104,7 +111,7 @@ fn start_record(db: Db) {
     };
     while !finished.load(Ordering::Relaxed) {
         std::process::Command::new("clear").status().unwrap();
-        display::show_counter(&n, now.elapsed().as_secs());
+        display::show_counter(&n, now.elapsed().as_secs(), &jobname);
         thread::sleep(Duration::from_secs(1));
     }
 }

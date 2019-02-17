@@ -76,11 +76,14 @@ pub fn list(db: Db) {
 /// and overall history
 fn display_project(p: Project) {
     let index = Green.bold().paint(&p.title);
-    let (today_sec, today_amount) = p.today();
+    let (today_sec, today_amount, today_jobs) = p.today();
     let (alltime_sec, alltime_amount) = p.alltime();
     let today = format!("{} ({})", Yellow.paint(show_time(today_sec)), today_amount);
     let alltime = format!("{} ({})", Yellow.paint(show_time(alltime_sec)), alltime_amount);
-    println!("{}\nToday:     {}\nAll time:  {}\n", index, today, alltime);
+    let joblist = today_jobs.iter().fold("".to_owned(), |s, j| {
+        format!("{}\n{}   {}", s, Yellow.paint(show_time(j.time.sec)), j.name)
+    });
+    println!("{}\nAll time:  {}\n\nToday:     {}\n------------------{}", index, alltime, today, joblist);
 }
 
 /// Display info about <project> or if <project> is
@@ -119,12 +122,16 @@ fn show_time(time: u64) -> String {
     r
 }
 
-pub fn show_counter(name: &str, time: u64) {
-    println!("{}{}   {}\n\n{}", "Working ", Green.bold().paint(name), Yellow.paint(show_time(time)), "Press ctrl-C to stop and save current job");
+pub fn show_counter(name: &str, time: u64, jobname: &Option<String>) {
+    let show_jobname = match jobname {
+        Some(j) => format!("{}\n",Yellow.bold().paint(j)),
+        None    => "".to_owned()
+    };
+    println!("Working {}   {}\n{}\n{}", Green.bold().paint(name), Yellow.paint(show_time(time)), show_jobname, "Press ctrl-C to stop and save current job");
 }
 
 pub fn saving(name: &str, time: u64) {
-    println!("Saving work for {}\n\nSeconds: {}", Green.bold().paint(name), Yellow.paint(show_time(time)));
+    println!("Saving work for {}\n\nTime spent: {}", Green.bold().paint(name), Yellow.paint(show_time(time)));
 }
 
 pub fn saved(r: Result<(), ()>) {

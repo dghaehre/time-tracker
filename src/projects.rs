@@ -45,6 +45,7 @@ pub enum ProjectStatus {
 #[derive(Clone)]
 pub struct Db {
     pub name:       Option<String>,
+    pub jobname:    Option<String>,
     pub current:    Option<Project>,
     pub projects:   Vec<Project>
 }
@@ -53,7 +54,7 @@ impl Db {
     /// Check for projects file
     /// if no file, create one
     /// else parse file
-    pub fn init(name: Option<&str>) -> Self {
+    pub fn init(name: Option<&str>, job_name: Option<&str>) -> Self {
         let f: Option<String> = match get_file() {
             Ok(s) => Some(s),
             Err(e) => {
@@ -67,6 +68,10 @@ impl Db {
             }
         };
         let n: Option<String> = match name {
+            Some(s) => Some(s.to_owned()),
+            None => None
+        };
+        let jobname: Option<String> = match job_name {
             Some(s) => Some(s.to_owned()),
             None => None
         };
@@ -85,7 +90,7 @@ impl Db {
                         .nth(0),
             None    => None
         };
-        Db { name: n, current, projects }
+        Db { name: n, current, projects, jobname }
     }
     /// Create a new project
     pub fn new(self) -> Result<(), ProjectError> {
@@ -133,7 +138,7 @@ impl Db {
                 .filter(|p| p.title == name)
                 .nth(0) {
             Some(mut project) => {
-                project.add_new_job(time);
+                project.add_new_job(time, self.jobname.clone());
                 match update_file(self.projects.clone(), project, FileOperation::Update) {
                     Ok(_) => Ok(()),
                     Err(_)  => Err(())
@@ -187,10 +192,10 @@ pub struct Project {
 
 impl Project {
     /// Add job for project
-    fn add_new_job(&mut self, sec: u64) {
+    fn add_new_job(&mut self, sec: u64, name: Option<String>) {
         let end: i64 = Local::now().timestamp();
         self.jobs.push(Job {
-            name: "test".to_string(),
+            name: name.unwrap_or("".to_owned()),
             time: Time {
                 sec,
                 end
@@ -203,7 +208,7 @@ impl Project {
         unimplemented!()
     }
     /// Return (total sec, amount of jobs done)
-    pub fn today(&self) -> (u64, usize) {
+    pub fn today(&self) -> (u64, usize, Vec<Job>) {
         let today: Vec<Job> = self.jobs
                             .iter()
                             .cloned()
@@ -214,7 +219,7 @@ impl Project {
                                 job_done == td
                             })
                             .collect();
-        (total_sec(&today), today.len())
+        (total_sec(&today), today.len(), today)
     }
     /// Return (total sec, amount of jobs done)
     pub fn alltime(&self) -> (u64, usize) {
@@ -230,7 +235,7 @@ pub struct Job {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Time {
-    sec:    u64,
+    pub sec:    u64,
     end:    i64
 }
 
