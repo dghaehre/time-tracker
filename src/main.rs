@@ -38,7 +38,7 @@ fn main() {
     let command = Arg::with_name("COMMAND")
                             .index(1)
                             .required(true)
-                            .help("list, start, stop, new, delete, display");
+                            .help("list, start, new, delete, display");
 
     let matches = App::new("Time tracker")
                         .version("1.0")
@@ -57,7 +57,6 @@ fn main() {
     match matches.value_of("COMMAND").unwrap() {
         "list"      => display::list(db),
         "start"     => start(db),
-        "stop"      => println!("Stop"),
         "new"       => new(db),
         "delete"    => delete(db),
         "display"   => display::stat(db),
