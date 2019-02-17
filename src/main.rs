@@ -15,43 +15,40 @@ extern crate ctrlc;
 #[macro_use]
 extern crate serde_derive;
 
-use clap::{Arg, App};
-mod projects;
+use clap::{App, Arg};
 mod display;
+mod projects;
 
-use projects::Db;
-use projects::ProjectStatus;
-use projects::ProjectError;
 use display::display_error;
 use display::display_status;
-use std::time::{Duration, Instant};
-use std::thread;
+use projects::Db;
+use projects::ProjectError;
+use projects::ProjectStatus;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 fn main() {
-
-    let arg_project = Arg::with_name("PROJECT")
-                            .index(2)
-                            .help("Name of project");
+    let arg_project = Arg::with_name("PROJECT").index(2).help("Name of project");
 
     let arg_job_name = Arg::with_name("JOB NAME")
-                            .index(3)
-                            .help("Name of job recorded");
+        .index(3)
+        .help("Name of job recorded");
 
     let command = Arg::with_name("COMMAND")
-                            .index(1)
-                            .required(true)
-                            .help("list, start, new, delete, display");
+        .index(1)
+        .required(true)
+        .help("list, start, new, delete, display");
 
     let matches = App::new("Time tracker")
-                        .version("0.1")
-                        .author("Daniel Hæhre <dghaehre@gmail.com>")
-                        .about("A cli tool for tracking time spent on projects")
-                        .arg(command)
-                        .arg(arg_project)
-                        .arg(arg_job_name)
-                        .get_matches();
+        .version("0.1")
+        .author("Daniel Hæhre <dghaehre@gmail.com>")
+        .about("A cli tool for tracking time spent on projects")
+        .arg(command)
+        .arg(arg_project)
+        .arg(arg_job_name)
+        .get_matches();
 
     let project_name = matches.value_of("PROJECT");
 
@@ -62,33 +59,35 @@ fn main() {
     let db = Db::init(project_name, job_name);
 
     match matches.value_of("COMMAND").unwrap() {
-        "list"      => display::list(db),
-        "start"     => start(db),
-        "new"       => new(db),
-        "delete"    => delete(db),
-        "display"   => display::stat(db),
-        _           => println!("Command not valid.. ")
+        "list" => display::list(db),
+        "start" => start(db),
+        "new" => new(db),
+        "delete" => delete(db),
+        "display" => display::stat(db),
+        _ => println!("Command not valid.. "),
     };
 }
 
 fn new(db: Db) {
     match db.new() {
         Ok(_) => display_status(ProjectStatus::ProjectCreated),
-        Err(e) => display_error(e)
+        Err(e) => display_error(e),
     }
 }
 
 fn delete(db: Db) {
     match db.delete() {
         Ok(_) => display_status(ProjectStatus::ProjectDeleted),
-        Err(e) => display_error(e)
+        Err(e) => display_error(e),
     }
 }
 
 fn start(db: Db) {
     match db.get_name() {
         Some(_) => start_record(db),
-        None       => println!("Missing project name\n\nUsage:\ntime-tracker start <project> <optional job-name>")
+        None => println!(
+            "Missing project name\n\nUsage:\ntime-tracker start <project> <optional job-name>"
+        ),
     }
 }
 
@@ -102,11 +101,11 @@ fn start_record(db: Db) {
     let d = Arc::new(db);
     let jobname = d.jobname.clone();
     if let Err(_) = ctrlc::set_handler(move || {
-            std::process::Command::new("clear").status().unwrap();
-            f.store(true, Ordering::Relaxed);
-            display::saving(&nn, now.elapsed().as_secs());
-            display::saved(d.save(&nn, now.elapsed().as_secs()));
-        }) {
+        std::process::Command::new("clear").status().unwrap();
+        f.store(true, Ordering::Relaxed);
+        display::saving(&nn, now.elapsed().as_secs());
+        display::saved(d.save(&nn, now.elapsed().as_secs()));
+    }) {
         display_error(ProjectError::StartRecording);
     };
     while !finished.load(Ordering::Relaxed) {

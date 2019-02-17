@@ -1,66 +1,85 @@
 /// Display info to user
-
 extern crate ansi_term;
 
-use projects::Project;
+use display::ansi_term::Colour::Green;
+use display::ansi_term::Colour::Red;
+use display::ansi_term::Colour::Yellow;
 use projects::Db;
+use projects::Project;
 use projects::ProjectError;
 use projects::ProjectStatus;
-use display::ansi_term::Colour::Red;
-use display::ansi_term::Colour::Green;
-use display::ansi_term::Colour::Yellow;
 
 pub fn display_error(e: ProjectError) {
     let index = Red.bold().paint("\nERROR: ");
     match e {
-        ProjectError::NoFile
-            => println!("{}{}", index, Red.paint("Did not find any file in home directory\n")),
-        ProjectError::CreateFile
-            => println!("{}{}", index, Red.paint("Could not create file in home directory\n")),
-        ProjectError::CreateDir
-            => println!("{}{}", index, Red.paint("Could not create .time-tracker directory in home directory")),
-        ProjectError::CreateProject
-            => println!("{}{}", index, Red.paint("Could not create new project")),
-        ProjectError::ParseFile
-            => println!("{}{}", index, Red.paint("Could not parse file")),
-        ProjectError::NoName
-            => println!("{}{}", index, Red.paint("Expected second argument, but no second argument given")),
-        ProjectError::WrongName
-            => println!("{}{}", index, Red.paint("Second argument does not corresbond to stored projects")),
-        ProjectError::DeleteProject
-            => println!("{}{}", index, Red.paint("Could not delete project")),
-        ProjectError::StartRecording
-            => println!("{}{}", index, Red.paint("Could not create thread to record session"))
+        ProjectError::NoFile => println!(
+            "{}{}",
+            index,
+            Red.paint("Did not find any file in home directory\n")
+        ),
+        ProjectError::CreateFile => println!(
+            "{}{}",
+            index,
+            Red.paint("Could not create file in home directory\n")
+        ),
+        ProjectError::CreateDir => println!(
+            "{}{}",
+            index,
+            Red.paint("Could not create .time-tracker directory in home directory")
+        ),
+        ProjectError::CreateProject => {
+            println!("{}{}", index, Red.paint("Could not create new project"))
+        }
+        ProjectError::ParseFile => println!("{}{}", index, Red.paint("Could not parse file")),
+        ProjectError::NoName => println!(
+            "{}{}",
+            index,
+            Red.paint("Expected second argument, but no second argument given")
+        ),
+        ProjectError::WrongName => println!(
+            "{}{}",
+            index,
+            Red.paint("Second argument does not corresbond to stored projects")
+        ),
+        ProjectError::DeleteProject => {
+            println!("{}{}", index, Red.paint("Could not delete project"))
+        }
+        ProjectError::StartRecording => println!(
+            "{}{}",
+            index,
+            Red.paint("Could not create thread to record session")
+        ),
     }
 }
 
 pub fn display_status(s: ProjectStatus) {
     let index = Green.bold().paint("STATUS: ");
     match s {
-        ProjectStatus::CreatingFile
-            => println!("{}{}", index, Green.paint("Creating file in home diretory")),
-        ProjectStatus::ProjectCreated
-            => println!("{}{}", index, Green.paint("Project is created")),
-        ProjectStatus::ProjectDeleted
-            => println!("{}{}", index, Green.paint("Project deleted"))
+        ProjectStatus::CreatingFile => {
+            println!("{}{}", index, Green.paint("Creating file in home diretory"))
+        }
+        ProjectStatus::ProjectCreated => println!("{}{}", index, Green.paint("Project is created")),
+        ProjectStatus::ProjectDeleted => println!("{}{}", index, Green.paint("Project deleted")),
     }
 }
 
-fn show_amount(a: usize) -> String { format!("({})\n", a.to_string()) }
+fn show_amount(a: usize) -> String {
+    format!("({})\n", a.to_string())
+}
 
 fn display_all(db: Db) {
     let index = Green.bold().paint("Projects: ");
     let projects = db.get_projects();
     let list = projects.iter().fold("".to_owned(), |s, p| {
         let (sec, len) = p.alltime();
-        s + 
-        &p.title.clone() + "\n" +
-        "-----------------------\n" +
-        "Total: " +
-        &show_time(sec) +
-        "  " +
-        &show_amount(len) +
-        "\n\n"
+        s + &p.title.clone()
+            + "\n"
+            + "-----------------------\n"
+            + "Total: "
+            + &show_time(sec)
+            + "  "
+            + &show_amount(len)
+            + "\n\n"
     });
     println!("{}{}\n{}", index, show_amount(projects.len()), list);
 }
@@ -68,7 +87,9 @@ fn display_all(db: Db) {
 pub fn list(db: Db) {
     let index = Green.bold().paint("Projects: ");
     let projects = db.get_projects();
-    let list = projects.iter().fold("".to_owned(), |s, p| { s + &p.title.clone() + "\n" });
+    let list = projects
+        .iter()
+        .fold("".to_owned(), |s, p| s + &p.title.clone() + "\n");
     println!("{}{}{}", index, show_amount(projects.len()), list);
 }
 
@@ -79,11 +100,23 @@ fn display_project(p: Project) {
     let (today_sec, today_amount, today_jobs) = p.today();
     let (alltime_sec, alltime_amount) = p.alltime();
     let today = format!("{} ({})", Yellow.paint(show_time(today_sec)), today_amount);
-    let alltime = format!("{} ({})", Yellow.paint(show_time(alltime_sec)), alltime_amount);
+    let alltime = format!(
+        "{} ({})",
+        Yellow.paint(show_time(alltime_sec)),
+        alltime_amount
+    );
     let joblist = today_jobs.iter().fold("".to_owned(), |s, j| {
-        format!("{}\n{}   {}", s, Yellow.paint(show_time(j.time.sec)), j.name)
+        format!(
+            "{}\n{}   {}",
+            s,
+            Yellow.paint(show_time(j.time.sec)),
+            j.name
+        )
     });
-    println!("{}\nAll time:  {}\n\nToday:     {}\n------------------{}", index, alltime, today, joblist);
+    println!(
+        "{}\nAll time:  {}\n\nToday:     {}\n------------------{}",
+        index, alltime, today, joblist
+    );
 }
 
 /// Display info about <project> or if <project> is
@@ -92,14 +125,13 @@ fn display_project(p: Project) {
 pub fn stat(db: Db) {
     match db.name {
         Some(_) => match db.get_project() {
-                    Ok(Some(p)) => display_project(p),
-                    Ok(None)    => display_error(ProjectError::WrongName),
-                    Err(e)      => display_error(e)
+            Ok(Some(p)) => display_project(p),
+            Ok(None) => display_error(ProjectError::WrongName),
+            Err(e) => display_error(e),
         },
-        None => display_all(db)
+        None => display_all(db),
     }
 }
-
 
 fn format_time(time: u64) -> String {
     if time > 9 {
@@ -124,19 +156,29 @@ fn show_time(time: u64) -> String {
 
 pub fn show_counter(name: &str, time: u64, jobname: &Option<String>) {
     let show_jobname = match jobname {
-        Some(j) => format!("{}\n",Yellow.bold().paint(j)),
-        None    => "".to_owned()
+        Some(j) => format!("{}\n", Yellow.bold().paint(j)),
+        None => "".to_owned(),
     };
-    println!("Working {}   {}\n{}\n{}", Green.bold().paint(name), Yellow.paint(show_time(time)), show_jobname, "Press ctrl-C to stop and save current job");
+    println!(
+        "Working {}   {}\n{}\n{}",
+        Green.bold().paint(name),
+        Yellow.paint(show_time(time)),
+        show_jobname,
+        "Press ctrl-C to stop and save current job"
+    );
 }
 
 pub fn saving(name: &str, time: u64) {
-    println!("Saving work for {}\n\nTime spent: {}", Green.bold().paint(name), Yellow.paint(show_time(time)));
+    println!(
+        "Saving work for {}\n\nTime spent: {}",
+        Green.bold().paint(name),
+        Yellow.paint(show_time(time))
+    );
 }
 
 pub fn saved(r: Result<(), ()>) {
     match r {
-        Ok(_)   => println!("\n{}", Green.bold().paint("Job saved succesfully")),
-        Err(_)  =>  println!("\n{}", Red.bold().paint("Saving failed"))
+        Ok(_) => println!("\n{}", Green.bold().paint("Job saved succesfully")),
+        Err(_) => println!("\n{}", Red.bold().paint("Saving failed")),
     }
 }
