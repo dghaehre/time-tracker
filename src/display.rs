@@ -46,7 +46,7 @@ pub fn display_status(s: ProjectStatus) {
 
 fn show_amount(a: usize) -> String { format!("({})\n", a.to_string()) }
 
-pub fn list(db: Db) {
+fn display_all(db: Db) {
     let index = Green.bold().paint("Projects: ");
     let projects = db.get_projects();
     let list = projects.iter().fold("".to_owned(), |s, p| {
@@ -61,6 +61,13 @@ pub fn list(db: Db) {
         "\n\n"
     });
     println!("{}{}\n{}", index, show_amount(projects.len()), list);
+}
+
+pub fn list(db: Db) {
+    let index = Green.bold().paint("Projects: ");
+    let projects = db.get_projects();
+    let list = projects.iter().fold("".to_owned(), |s, p| { s + &p.title.clone() + "\n" });
+    println!("{}{}{}", index, show_amount(projects.len()), list);
 }
 
 /// Display today's data for project
@@ -84,7 +91,7 @@ pub fn stat(db: Db) {
                     Ok(None)    => display_error(ProjectError::WrongName),
                     Err(e)      => display_error(e)
         },
-        None => list(db)
+        None => display_all(db)
     }
 }
 

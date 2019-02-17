@@ -4,11 +4,10 @@
 //! USAGE:
 //! time-tracker list
 //! time-tracker start <project>
-//! time-tracker stop <project>
 //! time-tracker new <project>
 //! time-tracker delete <project>
-//! time-tracker display <project>
 //! trime-tracker display
+//! time-tracker display <project>
 
 extern crate clap;
 extern crate ctrlc;
