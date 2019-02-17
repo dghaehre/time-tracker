@@ -23,7 +23,8 @@ pub enum ProjectError {
     CreateProject,
     DeleteProject,
     ParseFile,
-    NoName
+    NoName,
+    WrongName
 }
 
 #[derive(Debug)]
@@ -44,25 +45,6 @@ pub struct Db {
     pub name:       Option<String>,
     pub current:    Option<Project>,
     pub projects:   Vec<Project>
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Project {
-    pub title:          String,
-    pub description:    String,
-    pub jobs:           Vec<Job>
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Job {
-    pub name:   String,
-    pub time:   Time
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Time {
-    sec:    u64,
-    end:    String
 }
 
 impl Db {
@@ -93,9 +75,16 @@ impl Db {
                 process::exit(1);
             }
         };
-        Db { name: n, current: None, projects: projects }
+        let current: Option<Project> = match name {
+            Some(n) => projects
+                        .iter()
+                        .cloned()
+                        .filter(|p| p.title == n)
+                        .nth(0),
+            None    => None
+        };
+        Db { name: n, current, projects }
     }
-
     /// Create a new project
     pub fn new(self) -> Result<(), ProjectError> {
         match self.name {
@@ -113,7 +102,6 @@ impl Db {
             None => Err(ProjectError::NoName)
         }
     }
-
     pub fn delete(self) -> Result<(), ProjectError> {
         match self.name {
             Some(name) => {
@@ -131,7 +119,6 @@ impl Db {
             None => Err(ProjectError::NoName)
         }
     }
-
     /// Save new job to db
     /// and write to file
     ///
@@ -153,14 +140,12 @@ impl Db {
             None => Err(())
         }
     }
-
     /// Fetch respective project
     /// from ~/.time-tracker-projects
     pub fn get_project(&self) -> Result<Option<Project>, ProjectError> {
         let _file = get_file()?;
         Ok(self.current.clone())
     }
-
     /// Get Some(name) if user has provided name
     /// that corresponds to a project stored in 'db'
     pub fn get_name(&self) -> Option<String> {
@@ -184,7 +169,6 @@ impl Db {
             None => None
         }
     }
-
     /// Fetch all projects
     /// from ~/.time-tracker-projects
     pub fn get_projects(&self) -> Vec<Project> {
@@ -192,11 +176,17 @@ impl Db {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Project {
+    pub title:          String,
+    pub description:    String,
+    pub jobs:           Vec<Job>
+}
 
 impl Project {
     /// Add job for project
     fn add_new_job(&mut self, sec: u64) {
-        let end = "".to_owned(); // TODO
+        let end: i64 = Local::now().timestamp();
         self.jobs.push(Job {
             name: "test".to_string(),
             time: Time {
@@ -210,6 +200,36 @@ impl Project {
     fn _get(&self) {
         unimplemented!()
     }
+    /// Return (total sec, amount of jobs done)
+    pub fn today(&self) -> (u64, usize) {
+        let today: Vec<Job> = self.jobs
+                            .iter()
+                            .cloned()
+                            .filter(|j| {
+                                let job_done: NaiveDate = NaiveDateTime::from_timestamp(j.time.end, 0).date();
+                                let now: Date<Local> = Local::today();
+                                let td: NaiveDate = NaiveDate::from_ymd(now.year(), now.month(), now.day());
+                                job_done == td
+                            })
+                            .collect();
+        (total_sec(&today), today.len())
+    }
+    /// Return (total sec, amount of jobs done)
+    pub fn alltime(&self) -> (u64, usize) {
+        (total_sec(&self.jobs), self.jobs.len())
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Job {
+    pub name:   String,
+    pub time:   Time
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Time {
+    sec:    u64,
+    end:    i64
 }
 
 
@@ -285,6 +305,12 @@ fn has_project(all: &Vec<Project>, new: &Project) -> bool {
             x
         }
     })
+}
+
+/// Return total sec of all jobs
+fn total_sec(jobs: &Vec<Job>) -> u64 {
+    jobs.iter()
+        .fold(0, |t, j| t + j.time.sec)
 }
 
 fn update_project(all: &Vec<Project>, new: &Project) -> Vec<Project> {
