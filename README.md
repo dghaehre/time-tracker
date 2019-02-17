@@ -11,3 +11,4 @@ Current features:
   - Display general stats for all projects
 - list
   - List all projects 
+
