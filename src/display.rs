@@ -28,7 +28,9 @@ pub fn display_error(e: ProjectError) {
         ProjectError::WrongName
             => println!("{}{}", index, Red.paint("Second argument does not corresbond to stored projects")),
         ProjectError::DeleteProject
-            => println!("{}{}", index, Red.paint("Could not delete project"))
+            => println!("{}{}", index, Red.paint("Could not delete project")),
+        ProjectError::StartRecording
+            => println!("{}{}", index, Red.paint("Could not create thread to record session"))
     }
 }
 
@@ -118,7 +120,7 @@ fn show_time(time: u64) -> String {
 }
 
 pub fn show_counter(name: &str, time: u64) {
-    println!("{}{}   {}\n\n{}", "Working ", Green.bold().paint(name), Yellow.paint(show_time(time)), "Press ctrl-C to save current job");
+    println!("{}{}   {}\n\n{}", "Working ", Green.bold().paint(name), Yellow.paint(show_time(time)), "Press ctrl-C to stop and save current job");
 }
 
 pub fn saving(name: &str, time: u64) {

@@ -21,6 +21,7 @@ mod display;
 
 use projects::Db;
 use projects::ProjectStatus;
+use projects::ProjectError;
 use display::display_error;
 use display::display_status;
 use std::time::{Duration, Instant};
@@ -40,7 +41,7 @@ fn main() {
                             .help("list, start, new, delete, display");
 
     let matches = App::new("Time tracker")
-                        .version("1.0")
+                        .version("0.1")
                         .author("Daniel Hæhre <dghaehre@gmail.com>")
                         .about("A cli tool for tracking time spent on projects")
                         .arg(command)
@@ -49,8 +50,8 @@ fn main() {
 
     let project_name = matches.value_of("PROJECT");
 
-    /// Init time-tracker
-    /// If no file exist, create file in home directory
+    // Init time-tracker
+    // If no file exist, create file in home directory
     let db = Db::init(project_name);
 
     match matches.value_of("COMMAND").unwrap() {
@@ -93,12 +94,14 @@ fn start_record(db: Db) {
     let nn = n.clone();
     let f = finished.clone();
     let d = Arc::new(db);
-    ctrlc::set_handler(move || {
-        std::process::Command::new("clear").status().unwrap();
-        f.store(true, Ordering::Relaxed);
-        display::saving(&nn, now.elapsed().as_secs());
-        display::saved(d.save(&nn, now.elapsed().as_secs()));
-    });
+    if let Err(_) = ctrlc::set_handler(move || {
+            std::process::Command::new("clear").status().unwrap();
+            f.store(true, Ordering::Relaxed);
+            display::saving(&nn, now.elapsed().as_secs());
+            display::saved(d.save(&nn, now.elapsed().as_secs()));
+        }) {
+        display_error(ProjectError::StartRecording);
+    };
     while !finished.load(Ordering::Relaxed) {
         std::process::Command::new("clear").status().unwrap();
         display::show_counter(&n, now.elapsed().as_secs());

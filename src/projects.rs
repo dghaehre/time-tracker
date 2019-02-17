@@ -16,6 +16,7 @@ use display::display_error;
 use display::display_status;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum ProjectError {
     NoFile,
     CreateFile,
@@ -23,6 +24,7 @@ pub enum ProjectError {
     CreateProject,
     DeleteProject,
     ParseFile,
+    StartRecording,
     NoName,
     WrongName
 }
@@ -257,7 +259,7 @@ fn get_file() -> Result<String, ProjectError> {
             file.read_to_string(&mut contents).unwrap();
             Ok(contents)       
         },
-        Err(e) => Err(ProjectError::NoFile)
+        Err(_) => Err(ProjectError::NoFile)
     }
 }
 
@@ -282,7 +284,7 @@ fn create_file() -> Result<Option<String>, ProjectError> {
                Err(_) => Err(ProjectError::CreateFile)
            }
         },
-        Err(e) => Err(ProjectError::CreateFile)
+        Err(_) => Err(ProjectError::CreateFile)
     }
 }
    
@@ -297,32 +299,10 @@ fn parse_file(file: Option<String>) -> Option<Vec<Project>> {
     }
 }
 
-fn has_project(all: &Vec<Project>, new: &Project) -> bool {
-    all.iter().fold(false, |x, project| {
-        if project.title == new.title {
-            true
-        } else {
-            x
-        }
-    })
-}
-
 /// Return total sec of all jobs
 fn total_sec(jobs: &Vec<Job>) -> u64 {
     jobs.iter()
         .fold(0, |t, j| t + j.time.sec)
-}
-
-fn update_project(all: &Vec<Project>, new: &Project) -> Vec<Project> {
-    all.iter().fold(vec![], |mut l, project| {
-        if project.title == new.title {
-            l.push(new.clone());
-            l
-        } else {
-            l.push(project.clone());
-            l
-        }
-    })
 }
 
 /// Update ./time-tracker/projects.json
