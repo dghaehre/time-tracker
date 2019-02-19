@@ -235,6 +235,12 @@ pub struct Job {
     pub time: Time,
 }
 
+impl Job {
+    pub fn add_sec(&mut self, sec: u64) {
+        self.time.sec = self.time.sec + sec;
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Time {
     pub sec: u64,
