@@ -150,6 +150,14 @@ pub fn stat(db: Db) {
     }
 }
 
+/// Display info about all projects that has been
+/// worked on today
+pub fn today(db: Db) {
+    for p in db.today().into_iter() {
+        display_project(p);
+    }
+}
+
 fn format_time(time: u64) -> String {
     if time > 9 {
         time.to_string()

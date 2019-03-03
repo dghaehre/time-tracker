@@ -185,6 +185,17 @@ impl Db {
     pub fn get_projects(&self) -> Vec<Project> {
         self.projects.clone()
     }
+    /// Fetch all projects
+    /// that has saved any data for today
+    pub fn today(&self) -> Vec<Project> {
+        self.projects
+            .iter()
+            .map(|p| (p.today(), p) )
+            .filter(|((sec, _, _), _p)| sec > &0)
+            .map(|((_, _, _), p)| p)
+            .cloned()
+            .collect()
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

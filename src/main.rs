@@ -39,7 +39,7 @@ fn main() {
     let command = Arg::with_name("COMMAND")
         .index(1)
         .required(true)
-        .help("list, start, new, delete, display");
+        .help("list, start, new, delete, display, today");
 
     let matches = App::new("Time tracker")
         .version("0.1")
@@ -64,6 +64,7 @@ fn main() {
         "new" => new(db),
         "delete" => delete(db),
         "display" => display::stat(db),
+        "today" => display::today(db),
         _ => println!("Command not valid.. "),
     };
 }
