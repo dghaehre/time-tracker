@@ -131,8 +131,16 @@ impl Db {
     ///
     /// Create updated project and
     /// run update_file()
-    pub fn save(&self, name: &str, time: u64) -> Result<(), ()> {
-        match self
+    ///
+    /// Init db before save incase .json has
+    /// changed since first init
+    pub fn save<'a>(&self, name: &str, time: u64) -> Result<(), ()> {
+        let jobname: Option<&str> = match self.jobname {
+            Some(ref s) => Some(&s),
+            None    => None
+        };
+        let db = Db::init(Some(name), jobname); // Init db before save
+        match db
             .projects
             .iter()
             .cloned()
@@ -140,7 +148,7 @@ impl Db {
             .nth(0)
         {
             Some(mut project) => {
-                project.add_new_job(time, self.jobname.clone());
+                project.add_new_job(time, db.jobname.clone());
                 match update_file(self.projects.clone(), project, FileOperation::Update) {
                     Ok(_) => Ok(()),
                     Err(_) => Err(()),
