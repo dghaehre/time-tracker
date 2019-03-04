@@ -75,7 +75,7 @@ fn display_all(db: Db) {
         let (sec, len) = p.alltime();
         s + &p.title.clone()
             + "\n"
-            + "-----------------------\n"
+            + "--------------------------\n"
             + "Total: "
             + &show_time(sec)
             + "  "
@@ -131,7 +131,7 @@ fn display_project(p: Project) {
         )
     });
     println!(
-        "{}\nAll time:  {}\n\nToday:     {}\n------------------{}",
+        "{}\nAll time:  {}\n\nToday:     {}\n------------------------{}",
         index, alltime, today, joblist
     );
 }
@@ -153,8 +153,13 @@ pub fn stat(db: Db) {
 /// Display info about all projects that has been
 /// worked on today
 pub fn today(db: Db) {
-    for p in db.today().into_iter() {
+    let today = db.today();
+    let index = Green.bold().paint("Projects today: ");
+    println!("{} ({})", index, today.len());
+    for p in today.into_iter() {
+        println!(" ");
         display_project(p);
+        println!("--------------------------------------------");
     }
 }
 
