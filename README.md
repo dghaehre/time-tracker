@@ -1,14 +1,13 @@
-# Time tracking in terminal
-# 
-> A simple cli for tracking time spent on different projects.
+# time-tracker
 
-Current features:
-- start `project` `<job-name>`
-  - Record project with optional job name
-- display `project`
-  - Display stats for a specific project
-- display
-  - Display general stats for all projects
-- list
-  - List all projects 
+This is a cli tool to simply track your time spent on different
+projects.
 
+USAGE:
+time-tracker list
+time-tracker start <project>
+time-tracker new <project>
+time-tracker delete <project>
+trime-tracker display
+time-tracker display <project>
+time-tracker today
