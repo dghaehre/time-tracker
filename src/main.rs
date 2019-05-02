@@ -9,6 +9,7 @@
 //! trime-tracker display
 //! time-tracker display <project>
 //! time-tracker today
+//! time-tracker week
 
 extern crate clap;
 extern crate ctrlc;
@@ -40,7 +41,7 @@ fn main() {
     let command = Arg::with_name("COMMAND")
         .index(1)
         .required(true)
-        .help("list, start, new, delete, display, today");
+        .help("list, start, new, delete, display, today, week");
 
     let matches = App::new("Time tracker")
         .version("0.1")
@@ -65,6 +66,7 @@ fn main() {
         "new" => new(db),
         "delete" => delete(db),
         "display" => display::stat(db),
+        "week" => display::week(db),
         "today" => display::today(db),
         _ => println!("Command not valid.. "),
     };

@@ -5,8 +5,8 @@ use display::ansi_term::Colour::Green;
 use display::ansi_term::Colour::Red;
 use display::ansi_term::Colour::Yellow;
 use projects::Db;
-use projects::Project;
 use projects::Job;
+use projects::Project;
 use projects::ProjectError;
 use projects::ProjectStatus;
 
@@ -106,33 +106,85 @@ fn display_project(p: Project) {
         Yellow.paint(show_time(alltime_sec)),
         alltime_amount
     );
-    let joblist = today_jobs.into_iter().fold(vec![], |mut v: Vec<(Job, u64)>, j| {
-        let mut has_same_name = false;
-        v = v.into_iter().map(|(mut job, a)| {
-            if job.name == j.name {
-                has_same_name = true;
-                job.add_sec(j.time.sec);
-                (job, a + 1)
-            } else {
-                (job, a)
+    let joblist = today_jobs
+        .into_iter()
+        .fold(vec![], |mut v: Vec<(Job, u64)>, j| {
+            let mut has_same_name = false;
+            v = v
+                .into_iter()
+                .map(|(mut job, a)| {
+                    if job.name == j.name {
+                        has_same_name = true;
+                        job.add_sec(j.time.sec);
+                        (job, a + 1)
+                    } else {
+                        (job, a)
+                    }
+                })
+                .collect();
+            if !has_same_name {
+                v.push((j, 1));
             }
-        }).collect();
-        if !has_same_name {
-            v.push((j, 1));
-        }
-        v
-    }).iter().fold("".to_owned(), |s, (j, a)| { // a == additional data
-        format!(
-            "{}\n({}) {}   {}",
-            s,
-            a.to_string(),
-            Yellow.paint(show_time(j.time.sec)),
-            j.name
-        )
-    });
+            v
+        })
+        .iter()
+        .fold("".to_owned(), |s, (j, a)| {
+            // a == additional data
+            format!(
+                "{}\n({}) {}   {}",
+                s,
+                a.to_string(),
+                Yellow.paint(show_time(j.time.sec)),
+                j.name
+            )
+        });
     println!(
         "{}\nAll time:  {}\n\nToday:     {}\n------------------------{}",
         index, alltime, today, joblist
+    );
+}
+/// Display current week of data for project
+/// TODO: display day by day
+fn display_project_week(p: Project) {
+    let index = Green.bold().paint(&p.title);
+    let weekday_data = p.week();
+    let (week_sec, week_amount, week_jobs) = weekday_data.get(0).unwrap().data.clone();
+    let week = format!("{} ({})", Yellow.paint(show_time(week_sec)), week_amount);
+    let joblist = week_jobs
+        .into_iter()
+        .fold(vec![], |mut v: Vec<(Job, u64)>, j| {
+            let mut has_same_name = false;
+            v = v
+                .into_iter()
+                .map(|(mut job, a)| {
+                    if job.name == j.name {
+                        has_same_name = true;
+                        job.add_sec(j.time.sec);
+                        (job, a + 1)
+                    } else {
+                        (job, a)
+                    }
+                })
+                .collect();
+            if !has_same_name {
+                v.push((j, 1));
+            }
+            v
+        })
+        .iter()
+        .fold("".to_owned(), |s, (j, a)| {
+            // a == additional data
+            format!(
+                "{}\n({}) {}   {}",
+                s,
+                a.to_string(),
+                Yellow.paint(show_time(j.time.sec)),
+                j.name
+            )
+        });
+    println!(
+        "{}\nThis week:     {}\n------------------------{}",
+        index, week, joblist
     );
 }
 
@@ -159,6 +211,20 @@ pub fn today(db: Db) {
     for p in today.into_iter() {
         println!(" ");
         display_project(p);
+        println!("--------------------------------------------");
+    }
+}
+
+/// Display info about all projects that has been
+/// worked on this week
+/// TODO: Not finished
+pub fn week(db: Db) {
+    let week = db.week();
+    let index = Green.bold().paint("Projects worked on this week: ");
+    println!("{} ({})", index, week.len());
+    for p in week.into_iter() {
+        println!(" ");
+        display_project_week(p);
         println!("--------------------------------------------");
     }
 }

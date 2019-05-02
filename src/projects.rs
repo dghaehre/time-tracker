@@ -50,6 +50,16 @@ pub struct Db {
     pub projects: Vec<Project>,
 }
 
+pub struct WeekdayData {
+    pub data: PeriodData,
+    pub weekday: Weekday,
+}
+
+pub type Weekdays = Vec<WeekdayData>;
+
+/// (total_sec, total_amount, jobs)
+pub type PeriodData = (u64, usize, Vec<Job>);
+
 impl Db {
     /// Check for projects file
     /// if no file, create one
@@ -137,7 +147,7 @@ impl Db {
     pub fn save<'a>(&self, name: &str, time: u64) -> Result<(), ()> {
         let jobname: Option<&str> = match self.jobname {
             Some(ref s) => Some(&s),
-            None    => None
+            None => None,
         };
         let db = Db::init(Some(name), jobname); // Init db before save
         match db
@@ -198,9 +208,20 @@ impl Db {
     pub fn today(&self) -> Vec<Project> {
         self.projects
             .iter()
-            .map(|p| (p.today(), p) )
+            .map(|p| (p.today(), p))
             .filter(|((sec, _, _), _p)| sec > &0)
             .map(|((_, _, _), p)| p)
+            .cloned()
+            .collect()
+    }
+    /// Fetch all projects
+    /// that as saved any data for current week
+    pub fn week(&self) -> Vec<Project> {
+        self.projects
+            .iter()
+            .map(|p| (p.week(), p))
+            .filter(|(weekdays, _p)| weekdays.len() > 0)
+            .map(|(_, p)| p)
             .cloned()
             .collect()
     }
@@ -241,6 +262,21 @@ impl Project {
             })
             .collect();
         (total_sec(&today), today.len(), today)
+    }
+    /// Return (total sec, amount of jobs done)
+    /// TODO: return vec with correct days..
+    pub fn week(&self) -> Weekdays {
+        self.jobs
+            .iter()
+            .cloned()
+            .filter(|j| {
+                let job_done: NaiveDate = NaiveDateTime::from_timestamp(j.time.end, 0).date();
+                let now: Date<Local> = Local::today();
+                let monday: NaiveDate =
+                    NaiveDate::from_isoywd(now.year(), now.iso_week().week(), Weekday::Mon);
+                job_done >= monday
+            })
+            .fold(vec![], create_weekday_data)
     }
     /// Return (total sec, amount of jobs done)
     pub fn alltime(&self) -> (u64, usize) {
@@ -322,6 +358,23 @@ fn parse_file(file: Option<String>) -> Option<Vec<Project>> {
             None
         }
     }
+}
+
+/// concat job to weekday
+fn create_weekday_data(mut w: Weekdays, j: Job) -> Weekdays {
+    let weekday: Weekday = NaiveDateTime::from_timestamp(j.time.end, 0)
+        .date()
+        .weekday();
+    let exist = w.iter().filter(|d| d.weekday == weekday).count() > 0;
+    if exist {
+        w = w.into_iter().map(|d| d).collect();
+    } else {
+        w.push(WeekdayData {
+            data: (total_sec(&vec![j.clone()]), 1, vec![j]),
+            weekday,
+        });
+    }
+    w
 }
 
 /// Return total sec of all jobs

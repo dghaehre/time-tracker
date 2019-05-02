@@ -11,3 +11,4 @@ time-tracker delete <project>
 trime-tracker display
 time-tracker display <project>
 time-tracker today
+time-tracker week
